@@ -1,5 +1,5 @@
 " Self-contained tests for vim-markdown-follow.
-" Loaded after test/run.vim (which sets g:vmf_root, rtp, a stub netrw autoload).
+" Loaded after test/run.vim (which sets g:vmf_root, rtp, and filetype detection).
 
 set nomore
 
@@ -254,6 +254,13 @@ try
   let g:man_topic = ''
   execute 'normal ge'
   call Check('man:// valid topic reaches :Man', g:man_topic ==# 'printf(3)', string(g:man_topic))
+  bwipe!
+  " #2: gx on man:// also routes to :Man (consistent with ge).
+  call s:MdBuffer('[m](man://printf(3))')
+  call cursor(1, 2)
+  let g:man_topic = ''
+  execute 'normal gx'
+  call Check('gx man:// routes to :Man', g:man_topic ==# 'printf(3)', string(g:man_topic))
   bwipe!
 
   " #1: gx on a local link opens the resolved path with the system handler.

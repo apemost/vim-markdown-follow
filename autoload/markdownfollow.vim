@@ -1,6 +1,5 @@
 "*********************************************************************
 " vim-markdown-follow: follow/open Markdown links under the cursor.
-" Autoloaded (loaded once). Called from after/ftplugin/markdown.vim.
 "
 " vim-markdown's syntax groups locate links more precisely when available;
 " without it the line text is parsed directly.
@@ -44,9 +43,7 @@ function! s:DestFromInner(inner) abort
   return sp >= 0 ? strpart(s, 0, sp) : s
 endfunction
 
-" Resolve a reference label to the destination of its '[label]: dest' def.
-" Labels match case-insensitively (CommonMark); the destination is trimmed and
-" titles/trailing whitespace dropped via s:DestFromInner.
+" Resolve '[label]: dest' (case-insensitive label); destination via s:DestFromInner.
 function! s:ResolveReference(label) abort
   let pat = '\c^\s*\[\s*' . escape(a:label, '^$.*~/[]\') . '\s*\]:\s*\%(<\([^>]*\)>\|\(\S.*\)\)\s*$'
   let lnum = 1
@@ -82,9 +79,9 @@ function! s:ScanBalanced(text, start) abort
   return ['', -1]
 endfunction
 
-" Find an inline link '[label](dest)' in text whose span contains coff (a
-" 0-indexed offset). Handles balanced/nested parens and a destination/title
-" split across a newline. Returns the destination, or ''.
+" Find an inline link '[label](dest)' in text whose span contains coff
+" (0-indexed). Handles nested parens and a destination/title split across
+" a newline. Returns the destination, or ''.
 function! s:InlineLinkInText(text, coff) abort
   let i = 0
   let n = strlen(a:text)
@@ -115,8 +112,7 @@ function! s:InlineLinkInText(text, coff) abort
   return ''
 endfunction
 
-" Inline link under the cursor at (lnum, col), considering a link split across
-" the adjacent line. Returns the destination, or ''.
+" Inline link at (lnum, col), including one split across the adjacent line.
 function! s:InlineLinkAt(lnum, col) abort
   let line = getline(a:lnum)
   let coff = a:col - 1
@@ -220,9 +216,8 @@ function! markdownfollow#JumpToHeading(anchor) abort
   return 0
 endfunction
 
-" Open a path or URL with the system handler (open / xdg-open / cmd start),
-" via a job argument list (no shell) so metacharacters are safe. Avoids netrw,
-" which may be disabled (e.g. by NvimTree).
+" Open a path/URL via a job (no shell): the system handler (open / xdg-open /
+" cmd start) or g:vim_markdown_follow_local_opener.
 function! s:OpenLocal(path) abort
   let custom = get(g:, 'vim_markdown_follow_local_opener', [])
   let cmd = empty(custom)
@@ -348,7 +343,15 @@ function! markdownfollow#Open() abort
     return
   endif
 
-  if url =~# s:web_re || strpart(url, 0, 6) ==# 'man://'
+  if strpart(url, 0, 6) ==# 'man://'
+    let topic = strpart(url, 6)
+    if topic =~# '^[A-Za-z0-9_+.\- ()]\+$' && exists(':Man') == 2
+      execute 'Man' topic
+    endif
+    return
+  endif
+
+  if url =~# s:web_re
     call s:OpenLocal(url)
     return
   endif

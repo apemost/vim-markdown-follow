@@ -58,7 +58,7 @@ the |vim-markdown-follow-plugs|.
 >
     let g:vim_markdown_follow_local_opener = ['xdg-open']
 <
-Customize the command used by gx to open local files. It is invoked as a job
+Customize the command used by gx to open links (files and URLs). It is invoked as a job
 with the link path appended; the default is 'open' / 'xdg-open' / 'cmd start'.
 
 

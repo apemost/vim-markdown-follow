@@ -1,8 +1,7 @@
 "*********************************************************************
 " vim-markdown-follow: follow/open Markdown links under the cursor.
 "
-" Activates on the markdown filetype. vim-markdown is optional: its syntax
-" groups are used only to locate links more precisely when available.
+" Activates on the markdown filetype.
 "*********************************************************************
 
 if exists('b:did_markdown_follow')
