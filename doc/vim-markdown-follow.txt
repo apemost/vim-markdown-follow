@@ -1,0 +1,82 @@
+*vim-markdown-follow.txt*	Follow and open Markdown links under the cursor
+
+Author: Andrew Lyu
+License: MIT
+
+==============================================================================
+CONTENTS                                  *vim-markdown-follow* *vim-markdown-follow-contents*
+
+1. Introduction                        |vim-markdown-follow-intro|
+2. Usage                               |vim-markdown-follow-usage|
+3. Configuration                       |vim-markdown-follow-config|
+4. Plug mappings                       |vim-markdown-follow-plugs|
+
+==============================================================================
+1. INTRODUCTION                           *vim-markdown-follow-intro*
+
+Follow Markdown links under the cursor with ge / gx.
+
+Inspired by follow-md-links.nvim
+(https://github.com/jghauser/follow-md-links.nvim).
+
+==============================================================================
+2. USAGE                                  *vim-markdown-follow-usage*
+
+The plugin activates in buffers with the 'markdown' filetype. Keys with the
+cursor on a link:
+
+    ge                Follow the link inside Vim (edit the target). ~
+    gx                Open it with the system handler (browser, etc.). ~
+
+To follow links with Enter too, bind it to the plug mappings;
+see |vim-markdown-follow-plugs|.
+
+Supported targets:
+
+- Relative, absolute, and `~`-relative file paths.
+- Extensionless links: `.md` (or `.markdown`) is appended when the path does
+  not exist.
+- `file.md#heading` and same-file `#heading` anchors (GitHub-style slugs).
+- `file.md:42` opens the file at line 42.
+- Reference links: `[text][label]`, `[text][]`, and shortcut `[label]`.
+- `https://` / `http://` links open in the browser.
+- `man://topic` links open with |:Man|.
+
+Relative links resolve against the current file's directory, not the current
+working directory.
+
+==============================================================================
+3. CONFIGURATION                          *vim-markdown-follow-config*
+
+                                              *g:vim_markdown_follow_no_default_maps*
+>
+    let g:vim_markdown_follow_no_default_maps = 1
+<
+Disable the default ge / gx mappings so you can bind your own keys to
+the |vim-markdown-follow-plugs|.
+                                       *g:vim_markdown_follow_local_opener*
+>
+    let g:vim_markdown_follow_local_opener = ['xdg-open']
+<
+Customize the command used by gx to open local files. It is invoked as a job
+with the link path appended; the default is 'open' / 'xdg-open' / 'cmd start'.
+
+
+==============================================================================
+4. PLUG MAPPINGS                          *vim-markdown-follow-plugs*
+
+                                  *<Plug>(MarkdownFollow)*
+<Plug>(MarkdownFollow)
+    Follow the link under the cursor inside Vim. Default key: ge.
+
+                                  *<Plug>(MarkdownFollowOpen)*
+<Plug>(MarkdownFollowOpen)
+    Open the link under the cursor with the system handler. Default key: gx.
+
+Example of custom bindings: >
+    let g:vim_markdown_follow_no_default_maps = 1
+    autocmd FileType markdown nmap <buffer> <CR> <Plug>(MarkdownFollow)
+    autocmd FileType markdown nmap <buffer> gx  <Plug>(MarkdownFollowOpen)
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:

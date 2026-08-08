@@ -1,0 +1,17 @@
+# Folder view configuration files
+.DS_Store
+
+# Thumbnail cache files
+Thumbs.db
+
+# Vim help tags (generated locally with :Helptags)
+doc/tags
+
+# Swap/backup
+*.swp
+*.swo
+*~
+
+# Other
+.nvimlog
+nvim.log
