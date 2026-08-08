@@ -220,18 +220,9 @@ function! markdownfollow#JumpToHeading(anchor) abort
   return 0
 endfunction
 
-" Open url with netrw's system handler. Newer netrw takes one arg, older takes
-" two (raising E118/E119 respectively when called wrong); fall back if so.
-function! s:OpenBrowser(url) abort
-  try
-    call netrw#BrowseX(a:url)
-  catch /^Vim\%((\a\+)\)\=:\(E118\|E119\)/
-    call netrw#BrowseX(a:url, 0)
-  endtry
-endfunction
-
-" Open a local path with the system handler. Uses jobstart/job_start with an
-" argument list (no shell), so shell metacharacters in the path are safe.
+" Open a path or URL with the system handler (open / xdg-open / cmd start),
+" via a job argument list (no shell) so metacharacters are safe. Avoids netrw,
+" which may be disabled (e.g. by NvimTree).
 function! s:OpenLocal(path) abort
   let custom = get(g:, 'vim_markdown_follow_local_opener', [])
   let cmd = empty(custom)
@@ -316,7 +307,7 @@ function! markdownfollow#Follow() abort
   endif
 
   if url =~# s:web_re
-    call s:OpenBrowser(url)
+    call s:OpenLocal(url)
     return
   endif
 
@@ -352,13 +343,13 @@ endfunction
 function! markdownfollow#Open() abort
   let url = markdownfollow#UrlAtCursor()
   if url ==# ''
-    " Not on a link: fall back to netrw's gx on the <cfile> under the cursor.
-    call s:OpenBrowser(expand('<cfile>'))
+    " Not on a link: open the <cfile> under the cursor with the system handler.
+    call s:OpenLocal(expand('<cfile>'))
     return
   endif
 
   if url =~# s:web_re || strpart(url, 0, 6) ==# 'man://'
-    call s:OpenBrowser(url)
+    call s:OpenLocal(url)
     return
   endif
 

@@ -77,6 +77,15 @@ try
   execute 'source' fnameescape(g:vmf_root . '/after/ftplugin/markdown.vim')
   let g:abuf = bufnr('%')
 
+  " gx tests: the plugin opens links via a job (no netrw). Capture the argument
+  " passed to the opener by writing it to a file.
+  let g:vim_markdown_follow_local_opener = ['sh','-c','printf %s "$1" > ' . tmp . '/gx.txt', '--']
+  function! GxRead() abort
+    sleep 150m
+    let f = g:tmp . '/gx.txt'
+    return filereadable(f) ? readfile(f, 'b', 1) : []
+  endfunction
+
   let m = maparg('ge', 'n', 0, 1)
   call Check('ge mapped (buffer-local)', get(m, 'buffer', 0) == 1, string(m))
   let m = maparg('gx', 'n', 0, 1)
@@ -150,17 +159,17 @@ try
   execute 'normal ge'
   call Check('man:// with | is sanitized', !filereadable(marker) && g:man_topic ==# '', 'topic=' . string(g:man_topic))
 
-  let g:mf_captured = ''
+  call delete(tmp . '/gx.txt')
   execute 'buffer ' . g:abuf
   call cursor(29, 3)
   execute 'normal gx'
-  call Check('gx opens web link', g:mf_captured ==# 'https://example.com', string(g:mf_captured))
+  call Check('gx opens web link', GxRead() ==# ['https://example.com'], string(GxRead()))
 
-  let g:mf_captured = ''
+  call delete(tmp . '/gx.txt')
   execute 'buffer ' . g:abuf
   call cursor(17, 3)
   execute 'normal gx'
-  call Check('gx on #heading jumps (no handler)', g:mf_captured ==# '' && line('.') == 31, 'cap=' . string(g:mf_captured) . ' @' . line('.'))
+  call Check('gx on #heading jumps (no handler)', GxRead() ==# [] && line('.') == 31, 'line=' . line('.') . ' cap=' . string(GxRead()))
 
   " Slug handling: CJK, underscore, trailing dash, closing ATX '#'.
   call s:MdBuffer(['# 中文', '', '# foo_bar'])
@@ -194,26 +203,25 @@ try
   execute 'normal ge'
   call Check('ge on non-link moves down', line('.') == 3, line('.'))
 
-  " #3: gx on a bare URL falls back to netrw <cfile>.
+  " #3: gx on a bare URL opens <cfile> with the system handler.
+  call delete(tmp . '/gx.txt')
   call s:MdBuffer('see https://bare.example.com here')
   call cursor(1, 8)
-  let g:mf_captured = ''
   execute 'normal gx'
-  call Check('gx bare URL falls back to <cfile>', g:mf_captured =~# 'bare.example.com', string(g:mf_captured))
+  call Check('gx bare URL opens <cfile>', get(GxRead(), 0, '') =~# 'bare.example.com', string(GxRead()))
   bwipe!
 
   " #4: web_re requires ://, is case-insensitive, and does not eat filenames.
   call s:MdBuffer('[r](https-release.md)')
   call cursor(1, 2)
-  let g:mf_captured = ''
   execute 'normal ge'
-  call Check('https-release.md treated as local', bufname('%') =~# 'https-release.md$' && g:mf_captured ==# '', bufname('%') . ' cap=' . string(g:mf_captured))
+  call Check('https-release.md treated as local', bufname('%') =~# 'https-release.md$', bufname('%'))
   bwipe!
+  call delete(tmp . '/gx.txt')
   call s:MdBuffer('[x](HTTPS://example.com)')
   call cursor(1, 2)
-  let g:mf_captured = ''
   execute 'normal gx'
-  call Check('HTTPS:// recognized as web', g:mf_captured ==# 'HTTPS://example.com', string(g:mf_captured))
+  call Check('HTTPS:// recognized as web', GxRead() ==# ['HTTPS://example.com'], string(GxRead()))
   bwipe!
 
   " #5: reference definition drops title and trailing space.
@@ -248,14 +256,12 @@ try
   call Check('man:// valid topic reaches :Man', g:man_topic ==# 'printf(3)', string(g:man_topic))
   bwipe!
 
-  " #1: gx local goes to OpenLocal (jobstart arg-list), not netrw/shell.
-  let g:vim_markdown_follow_local_opener = ['true']
+  " #1: gx on a local link opens the resolved path with the system handler.
+  call delete(tmp . '/gx.txt')
   execute 'buffer ' . g:abuf
   call cursor(3, 3)
-  let g:mf_captured = ''
   execute 'normal gx'
-  call Check('gx local uses OpenLocal not netrw', g:mf_captured ==# '', string(g:mf_captured))
-  unlet g:vim_markdown_follow_local_opener
+  call Check('gx opens local link', get(GxRead(), 0, '') =~# 'target.md$', string(GxRead()))
 
   " Non-markdown buffers are left alone.
   execute 'buffer ' . g:abuf
